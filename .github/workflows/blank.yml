@@ -1,0 +1,23 @@
+name: build
+on: [push, workflow_dispatch]
+permissions:
+  contents: write
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: unzip -o projeto.zip -d proj
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: 17}
+      - uses: gradle/actions/setup-gradle@v4
+        with: {gradle-version: 8.9}
+      - run: |
+          mkdir -p proj/app/src/main/assets
+          curl -fL -o proj/app/src/main/assets/Outfit.ttf "https://github.com/google/fonts/raw/main/ofl/outfit/Outfit%5Bwght%5D.ttf" || true
+      - run: gradle assembleDebug --no-daemon
+        working-directory: proj
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          files: proj/app/build/outputs/apk/debug/app-debug.apk
